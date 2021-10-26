@@ -10,4 +10,4 @@ version = "0.35.0"
 features = ["bundled", "static-link"]
 
 [dependencies]
-gl = "0.10.0"
+gl = "0.14.0"
