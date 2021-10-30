@@ -1,4 +1,3 @@
-
 extern crate gl;
 extern crate sdl2;
 
@@ -17,7 +16,7 @@ fn main() {
         gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
 
     unsafe {
-        gl::ClearColor(0.3, 0.3, 0.5, 1.0);
+        gl::ClearColor(0.3, 0.3, 1.0, 1.0);
     }
 
     let mut event_pump = sdl.event_pump().unwrap();
