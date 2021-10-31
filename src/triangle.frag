@@ -6,8 +6,7 @@ in VS_OUTPUT {
 
 out vec4 Color;
 
-void main()
-{
+void main() {
     Color = vec4(IN.Color, 1.0f);
 }
 
