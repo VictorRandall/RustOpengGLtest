@@ -6,7 +6,9 @@ pub mod render_gl;
 fn main() {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
-
+	
+	println!("started sdl2");
+	
     let gl_attr = video_subsystem.gl_attr();
 
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
@@ -18,7 +20,8 @@ fn main() {
         .resizable()
         .build()
         .unwrap();
-
+	println!("created window");
+	
     let _gl_context = window.gl_create_context().unwrap();
     let _gl =
         gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
@@ -44,7 +47,7 @@ fn main() {
         -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
         0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
     ];
-
+	
     let mut vbo: gl::types::GLuint = 0;
     unsafe {
         gl::GenBuffers(1, &mut vbo);
@@ -81,6 +84,7 @@ fn main() {
             (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
             std::ptr::null(),                                     // offset of the first component
         );
+        
         gl::EnableVertexAttribArray(1); // this is "layout (location = 0)" in vertex shader
         gl::VertexAttribPointer(
             1,         // index of the generic vertex attribute ("layout (location = 0)")
@@ -103,7 +107,9 @@ fn main() {
     }
 
     // main loop
-
+	
+	println!("started main loop");
+	
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
         for event in event_pump.poll_iter() {
