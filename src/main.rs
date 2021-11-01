@@ -43,9 +43,9 @@ fn main() {
 
     let vertices: Vec<f32> = vec![
         // positions      // colors
-        0.5, -0.5, 0.0, 1.0, 0.1, 0.1, // bottom right
-        -0.5, -0.5, 0.0, 0.1, 1.0, 0.1, // bottom left
-        0.0, 0.5, 0.0, 0.1, 0.1, 1.0, // top
+        0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom right
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
+        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
     ];
 	
     let mut vbo: gl::types::GLuint = 0;
@@ -137,4 +137,5 @@ fn main() {
 
         window.gl_swap_window();
     }
-}
+    println!("finished main loop");
+}	
