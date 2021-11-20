@@ -1,134 +1,91 @@
-extern crate gl;
+use std::fs;
+use std::fs::File;
+use std::io::prelude::*;
 extern crate sdl2;
+extern crate gl;
+extern crate bincode;
 
-pub mod render_gl;
+struct Mesh{
+	vertbuffer: Vec<f32>,
+	indexbuffer: Vec<usize>
+}
 
-fn main() {
+
+
+fn main() -> std::io::Result<()> {
     let sdl = sdl2::init().unwrap();
     let video_subsystem = sdl.video().unwrap();
-
-    let gl_attr = video_subsystem.gl_attr();
-
-    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-    gl_attr.set_context_version(4, 1);
-
     let window = video_subsystem
-        .window("Game", 900, 700)
+        .window("Rust Game", 900, 700)
         .opengl()
         .resizable()
         .build()
         .unwrap();
-
-    let _gl_context = window.gl_create_context().unwrap();
-    let _gl =
-        gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
-
-    // set up shader program
-
-    use std::ffi::CString;
-    let vert_shader =
-        render_gl::Shader::from_vert_source(&CString::new(include_str!("triangle.vert")).unwrap())
-            .unwrap();
-
-    let frag_shader =
-        render_gl::Shader::from_frag_source(&CString::new(include_str!("triangle.frag")).unwrap())
-            .unwrap();
-
-    let shader_program = render_gl::Program::from_shaders(&[vert_shader, frag_shader]).unwrap();
-
-    // set up vertex buffer object
-
-    let vertices: Vec<f32> = vec![
-        // positions      // colors
-        0.5, -0.5, 0.0, 1.0, 0.0, 0.0, // bottom right
-        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0, // bottom left
-        0.0, 0.5, 0.0, 0.0, 0.0, 1.0, // top
-    ];
-
-    let mut vbo: gl::types::GLuint = 0;
-    unsafe {
-        gl::GenBuffers(1, &mut vbo);
-    }
-
-    unsafe {
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-        gl::BufferData(
-            gl::ARRAY_BUFFER,                                                       // target
-            (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr, // size of data in bytes
-            vertices.as_ptr() as *const gl::types::GLvoid, // pointer to data
-            gl::STATIC_DRAW,                               // usage
-        );
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-    }
-
-    // set up vertex array object
-
-    let mut vao: gl::types::GLuint = 0;
-    unsafe {
-        gl::GenVertexArrays(1, &mut vao);
-    }
-
-    unsafe {
-        gl::BindVertexArray(vao);
-        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-
-        gl::EnableVertexAttribArray(0); // this is "layout (location = 0)" in vertex shader
-        gl::VertexAttribPointer(
-            0,         // index of the generic vertex attribute ("layout (location = 0)")
-            3,         // the number of components per generic vertex attribute
-            gl::FLOAT, // data type
-            gl::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            std::ptr::null(),                                     // offset of the first component
-        );
-        gl::EnableVertexAttribArray(1); // this is "layout (location = 0)" in vertex shader
-        gl::VertexAttribPointer(
-            1,         // index of the generic vertex attribute ("layout (location = 0)")
-            3,         // the number of components per generic vertex attribute
-            gl::FLOAT, // data type
-            gl::FALSE, // normalized (int-to-float conversion)
-            (6 * std::mem::size_of::<f32>()) as gl::types::GLint, // stride (byte offset between consecutive attributes)
-            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid, // offset of the first component
-        );
-
-        gl::BindBuffer(gl::ARRAY_BUFFER, 0);
-        gl::BindVertexArray(0);
-    }
-
-    // set up shared state for window
-
-    unsafe {
-        gl::Viewport(0, 0, 900, 700);
-        gl::ClearColor(0.3, 0.3, 0.5, 1.0);
-    }
-
-    // main loop
-
+	
+	let mut file = File::create("test.world")?;
+	
+	let test = serialize(
+		&Mesh{//               1        2         3       4      5        6        7        8     9
+			vertbuffer: vec![-0.5f32, -0.5f32, 0.0f32, 0.5f32, -0.5f32, 0.0f32, 0.0f32, 0.5f32, 0.0f32],
+			indexbuffer: vec![1usize, 2usize, 3usize, 4usize, 5usize, 6usize, 7usize, 8usize, 9usize]
+		}, Infinite).unwrap();
+	
+	file.write_all(&[test])?;
+	
+	let gl_context = window.gl_create_context().unwrap();
+	
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
-                sdl2::event::Event::Quit { .. } => break 'main,
+                sdl2::event::Event::Quit { .. } => {
+                	println!("Exited");
+                	break 'main Ok(());
+                	},
                 _ => {}
             }
         }
 
-        unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT);
-        }
-
-        // draw triangle
-
-        shader_program.set_used();
-        unsafe {
-            gl::BindVertexArray(vao);
-            gl::DrawArrays(
-                gl::TRIANGLES, // mode
-                0,             // starting index in the enabled arrays
-                3,             // number of indices to be rendered
-            );
-        }
-
-        window.gl_swap_window();
+        // render window contents here
     }
 }
+
+
+//use std::fs;
+//use std::fs::File;
+//use std::io::prelude::*;
+//
+//#[macro_use]
+//extern crate serde_derive;
+//extern crate bincode;
+//
+//use bincode::{serialize, deserialize, Infinite};
+//
+//#[derive(Serialize, Deserialize, PartialEq, Debug)]
+//struct Entity {
+//    x: f32,
+//    y: f32,
+//}
+//
+//#[derive(Serialize, Deserialize, PartialEq, Debug)]
+//struct World(Vec<Entity>);
+//
+//fn main() -> std::io::Result<()> {
+//    let world = World(vec![Entity { x: 0.0, y: 4.0 }, Entity { x: 10.0, y: 20.5 }]);
+//
+//    let mut encoded: Vec<u8> = serialize(&world, Infinite).unwrap();
+//	
+//	let mut file = File::create("test")?;
+//	// Write a slice of bytes to the file
+//	file.write_all(&encoded)?;
+//	
+//    // 8 bytes for the length of the vector, 4 bytes per float.
+//    println!("{:?} {:?}", encoded.len(), 8 + 4 * 4);
+//	
+//	println!("{}",file.read_to_end(&mut encoded)?);
+//    let decoded: World = deserialize(&encoded[..]).unwrap();
+//
+//    println!("{:?} {:?}", world, decoded);
+//    
+//    Ok(())
+//}
