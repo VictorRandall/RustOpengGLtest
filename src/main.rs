@@ -25,21 +25,9 @@ fn main() -> std::io::Result<()> {
         .build()
         .unwrap();
 	
-//	let mut file = File::create("test.world")?;
-	
-//	let test = serialize("rust", Infinite).unwrap();
-//		&Mesh{//               1        2         3       4      5        6        7        8     9
-//			vertbuffer: vec![-0.5f32, -0.5f32, 0.0f32, 0.5f32, -0.5f32, 0.0f32, 0.0f32, 0.5f32, 0.0f32],
-//			indexbuffer: vec![1usize, 2usize, 3usize, 4usize, 5usize, 6usize, 7usize, 8usize, 9usize]
-//		}, Infinite).unwrap();
-	
-//	file.write_all(&test)?;
-	
 	let gl_context = window.gl_create_context().unwrap();
 	
 	let _gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void);
-	
-	let mut sus = vec![0.01, 0.01, 0.01, 1.0];
 	
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
@@ -53,11 +41,19 @@ fn main() -> std::io::Result<()> {
             }
         }
 		
-		sus.iter_mut().for_each(|x| *x += 0.0005);
+//		sus.iter_mut().for_each(|x|{
+//			if x < &mut 1.0{
+//				*x -= 0.0001;
+//			}else {
+//				*x += 0.001;
+//			}
+//		});
 		
 		unsafe{
-			gl::ClearColor(sus[0], sus[1], sus[2], sus[3]);
+			gl::ClearColor(0.4, 0.4, 0.8, 1.0);
 		}
+		
+//		println!("red = {} green = {} blue = {} alpha = {}",sus[0], sus[1], sus[2], sus[3]);
 		
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT);
@@ -67,6 +63,13 @@ fn main() -> std::io::Result<()> {
     }
 }
 
+//	let mut file = File::create("test.world")?;
+//	let test = serialize("rust", Infinite).unwrap();
+//		&Mesh{//               1        2         3       4      5        6        7        8     9
+//			vertbuffer: vec![-0.5f32, -0.5f32, 0.0f32, 0.5f32, -0.5f32, 0.0f32, 0.0f32, 0.5f32, 0.0f32],
+//			indexbuffer: vec![1usize, 2usize, 3usize, 4usize, 5usize, 6usize, 7usize, 8usize, 9usize]
+//		}, Infinite).unwrap();
+//	file.write_all(&test)?;
 
 //use std::fs;
 //use std::fs::File;
