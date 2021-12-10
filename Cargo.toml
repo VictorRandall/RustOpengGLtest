@@ -6,13 +6,4 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sdl2 = "0.35.1"
-gl = "0.14.0"
-bincode = "0.9.2"
-serde_derive = "1.0.130"
-serde = { version = "1.0", features = ["derive"] }
-#gl = { path = "lib/gl" }
-#
-#[features]
-#gl_debug = ["gl/debug"]
-#
+glium = "0.30.2"
