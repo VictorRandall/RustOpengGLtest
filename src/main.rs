@@ -17,18 +17,24 @@ fn main(){
 	#[derive(Copy, Clone)]
 	struct Vertex {
 		position: [f32; 2],
+		tex_coords: [f32; 2],
 	}
 	
 	implement_vertex!(Vertex, position);
 	
 	//triangle
 	let shape = vec![
-		Vertex { position: [-0.5, -0.5] }, 
-		Vertex { position: [ 0.0,  0.5] }, 
-		Vertex { position: [ 0.5, -0.25] }
+		Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] }, 
+		Vertex { position: [ 0.0,  0.5], tex_coords: [0.0, 0.0] }, 
+		Vertex { position: [ 0.5, -0.25], tex_coords: [0.0, 0.0] }
 	];
 	
-	let image = image::load(Cursor::new(&include_bytes!("")))
+	let image = image::load(Cursor::new(&include_bytes!("../textures/Screenshot_20211211-204554.png")),
+							image::ImageFormat::Png).unwrap().to_rgba8();
+	let image_dimensions = image.dimensions();
+	let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+	
+	let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
 	
 	let mut vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
 	
