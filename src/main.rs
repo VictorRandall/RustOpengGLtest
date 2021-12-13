@@ -20,13 +20,13 @@ fn main(){
 		tex_coords: [f32; 2],
 	}
 	
-	implement_vertex!(Vertex, position);
+	implement_vertex!(Vertex, position, tex_coords);
 	
 	//triangle
 	let shape = vec![
 		Vertex { position: [-0.5, -0.5], tex_coords: [0.0, 0.0] }, 
-		Vertex { position: [ 0.0,  0.5], tex_coords: [0.0, 0.0] }, 
-		Vertex { position: [ 0.5, -0.25], tex_coords: [0.0, 0.0] }
+		Vertex { position: [ 0.0,  0.5], tex_coords: [0.0, 1.0] }, 
+		Vertex { position: [ 0.5, -0.25], tex_coords: [1.0, 0.0] }
 	];
 	
 	let image = image::load(Cursor::new(&include_bytes!("../textures/Screenshot_20211211-204554.png")),
@@ -43,13 +43,16 @@ fn main(){
 	let vertex_shader_src = r#"
 		#version 140
 
-		in vec2 position;
-		out vec2 my_attr;
+		in vec3 position;
+		
+//		in vec2 tex_coords;
+//		out vec2 v_tex_coords;
+
 
 		uniform mat4 matrix;
 
 		void main() {
-			my_attr = position;
+			v_tex_coords = tex_coords;
 		    gl_Position = matrix * vec4(position, 0.0, 1.0);
 		}
 	"#;
@@ -58,11 +61,13 @@ fn main(){
 	let fragment_shader_src = r#"
 		#version 140
 		
-		in vec2 my_attr;
+		in vec2 v_tex_coords;
 		out vec4 color;
+		
+		uniform sampler2D tex;
 
 		void main() {
-		    color = vec4(my_attr, 0.0, 1.0); 
+		    color = texture(tex, v_tex_coords); 
 		}
 	"#;
 	
@@ -110,7 +115,8 @@ fn main(){
 				[-t.sin(), t.cos(), 0.0, 0.0],
 				[0.0, 0.0, 1.0, 0.0],
 				[ t , 0.0, 0.0, 1.0f32],
-			]
+			],
+			tex: &texture
 		};
 		
 		target.draw(&vertex_buffer, &indices, &program, &uniforms,
