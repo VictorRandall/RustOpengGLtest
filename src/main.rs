@@ -120,24 +120,19 @@ fn main(){
 	//timer
 //	let mut t: f32 = -0.5;
 	
+	struct Viewport{
+		pub position: [f32; 3],
+		pub direction: [f32; 3],
+		up: [f32; 3]
+	}
+		
+	let viewport = Viewport{
+		position: [1.0, -1.0, 1.0],
+		direction: [0.0, 1.0, 1.0],
+		up: [0.0, 1.0, 0.0]
+	};
 	//main loop
 	event_loop.run(move |event, _, control_flow| {
-
-		match event {
-		    glutin::event::Event::WindowEvent { event, .. } => match event {
-		        glutin::event::WindowEvent::CloseRequested => {
-		            *control_flow = glutin::event_loop::ControlFlow::Exit;
-		            return;
-		        },
-		        _ => return,
-		    },
-		    glutin::event::Event::NewEvents(cause) => match cause {
-		        glutin::event::StartCause::ResumeTimeReached { .. } => (),
-		        glutin::event::StartCause::Init => (),
-		        _ => return,
-		    },
-		    _ => return,
-		}
 
 		let next_frame_time = std::time::Instant::now() +
 		    std::time::Duration::from_nanos(16_666_667);
@@ -191,12 +186,60 @@ fn main(){
 		
 		let first = [1.0, -1.0, 1.0];
 		
-		let view = view_matrix(&[1.0, -1.0, 1.0], &[-2.0, 1.0, 1.0], &[0.0, 1.0, 0.0]);
+		
+		let view = view_matrix(&[&viewport::position[0], &viewport::position[1], &viewport::position[2]],
+								&[&viewport::position[0], &viewport::position[1], &viewport::position[2]],
+								&[&viewport::position[0], &viewport::position[1], &viewport::position[2]]);
 
 		target.draw((&positions, &normals), &indices, &program,
 					&uniform! { model: model, view: view, perspective: perspective, u_light: light },
 					&params).unwrap();
 		
 		target.finish().unwrap();
+		
+		match event {
+		    glutin::event::Event::WindowEvent { event, .. } => match event {
+		        glutin::event::WindowEvent::CloseRequested => {
+		            *control_flow = glutin::event_loop::ControlFlow::Exit;
+		            return;
+		        },
+		        glutin::event::WindowEvent::KeyboardInput{device_id, input, is_synthetic} => {
+		        	println!("input = {:?}", input);
+		        	// W = 17, A = 30, D = 32, S = 31
+		        	if input == (glutin::event::KeyboardInput { scancode: 17,
+		        												state: glutin::event::ElementState::Pressed,
+		        												virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
+		        												modifiers: (glutin::event::ModifiersState::empty()) }) {
+		        		println!("vc apertou W");
+		        	}
+		        	if input == (glutin::event::KeyboardInput { scancode: 17,
+		        												state: glutin::event::ElementState::Pressed,
+		        												virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
+		        												modifiers: (glutin::event::ModifiersState::empty()) }) {
+		        												
+		        	}
+		        	if input == (glutin::event::KeyboardInput { scancode: 17,
+		        												state: glutin::event::ElementState::Pressed,
+		        												virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
+		        												modifiers: (glutin::event::ModifiersState::empty()) }) {
+		        												
+		        	}
+		        	if input == (glutin::event::KeyboardInput { scancode: 17,
+		        												state: glutin::event::ElementState::Pressed,
+		        												virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
+		        												modifiers: (glutin::event::ModifiersState::empty()) }) {
+		        												
+		        	}
+		        }
+		        _ => return,
+		    },
+		    glutin::event::Event::NewEvents(cause) => match cause {
+		        glutin::event::StartCause::ResumeTimeReached { .. } => (),
+		        glutin::event::StartCause::Init => (),
+		        _ => return,
+		    },
+		    _ => return,
+		}
+		
 	});
 }
