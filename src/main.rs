@@ -18,7 +18,7 @@ fn main(){
 	glium::implement_vertex!(Vertex, pos);
 	
 	let cube = vec![
-		Vertex {pos: [0.0, 0.0, 0.0]},
+//		Vertex {pos: [0.0, 0.0, 0.0]},
 		
 		Vertex {pos: [0.0, 0.0, 0.0]}, // 1
 		Vertex {pos: [0.0, 0.0, 1.0]}, // 2
@@ -35,7 +35,8 @@ fn main(){
 	];
 	
 	let v_buffer = glium::VertexBuffer::new(&display, &cube).unwrap();
-	let i_buffer = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &indices).unwrap();
+//	let i_buffer = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList, &indices).unwrap();
+	let indices = 
 	
 	let vertex_shader_src = r#"
 		#version 140
