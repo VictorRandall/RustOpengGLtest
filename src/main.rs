@@ -1,50 +1,52 @@
-use glium::{glutin, Surface};
+mod teapot;
 
 fn main() {
     #[allow(unused_imports)]
-//    use glium::{glutin, Surface};
+    use glium::{glutin, Surface};
 
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new();
-    let cb = glutin::ContextBuilder::new();
+    let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    #[derive(Copy, Clone)]
-    struct Vertex {
-        position: [f32; 2],
-    }
-
-    glium::implement_vertex!(Vertex, position);
-
-    let vertex1 = Vertex { position: [-0.5, -0.5] };
-    let vertex2 = Vertex { position: [ 0.0,  0.5] };
-    let vertex3 = Vertex { position: [ 0.5, -0.25] };
-    let shape = vec![vertex1, vertex2, vertex3];
-
-    let vertex_buffer = glium::VertexBuffer::new(&display, &shape).unwrap();
-    let indices = glium::index::NoIndices(glium::index::PrimitiveType::TrianglesList);
+    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
+    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
+    let indices = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList,
+                                          &teapot::INDICES).unwrap();
 
     let vertex_shader_src = r#"
-        #version 140
-        in vec2 position;
+        #version 150
+        in vec3 position;
+        in vec3 normal;
+        out vec3 v_normal;
+        uniform mat4 perspective;
+        uniform mat4 view;
+        uniform mat4 model;
         void main() {
-            gl_Position = vec4(position, 0.0, 1.0);
+            mat4 modelview = view * model;
+            v_normal = transpose(inverse(mat3(modelview))) * normal;
+            gl_Position = perspective * modelview * vec4(position, 1.0);
         }
     "#;
 
     let fragment_shader_src = r#"
-        #version 140
+        #version 150
+        in vec3 v_normal;
         out vec4 color;
+        uniform vec3 u_light;
         void main() {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
+            float brightness = dot(normalize(v_normal), normalize(u_light));
+            vec3 dark_color = vec3(0.6, 0.0, 0.0);
+            vec3 regular_color = vec3(1.0, 0.0, 0.0);
+            color = vec4(mix(dark_color, regular_color, brightness), 1.0);
         }
     "#;
 
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src, None).unwrap();
-
-	let mut num: u64 = 0;
-	let mut num2: u64 = 0;
-
+    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src,
+                                              None).unwrap();
+	
+	let mut num: Vec<f32> = vec![0f32,0f32];
+	
     event_loop.run(move |event, _, control_flow| {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
@@ -59,14 +61,36 @@ fn main() {
 				glutin::event::WindowEvent::KeyboardInput{device_id, input, is_synthetic} => {
 //                    println!("input = {:?}", input);
                     // W = 17, A = 30, D = 32, S = 31
+                    
                     if input == (glutin::event::KeyboardInput { scancode: 17,
                                                                 state: glutin::event::ElementState::Pressed,
                                                                 virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
                                                                 modifiers: (glutin::event::ModifiersState::empty()) }) {
-                        println!("you pressed W");
+                       	num[0] += 0.01f32;
+                        println!("{:?}", num);
                     }
-                }
-
+                    if input == (glutin::event::KeyboardInput { scancode: 31,
+                                                                state: glutin::event::ElementState::Pressed,
+                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::S),
+                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+                       	num[0] -= 0.01f32;
+                        println!("{:?}", num);
+                    }
+                    if input == (glutin::event::KeyboardInput { scancode: 30,
+                                                                state: glutin::event::ElementState::Pressed,
+                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::A),
+                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+                        num[1] += 0.01f32;
+                        println!("{:?}", num);
+                    }
+                    if input == (glutin::event::KeyboardInput { scancode: 32,
+                                                                state: glutin::event::ElementState::Pressed,
+                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::D),
+                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+                        num[1] -= 0.01f32;
+                        println!("{:?}", num);
+                    }
+                },
                 _ => return,
             },
             glutin::event::Event::NewEvents(cause) => match cause {
@@ -78,9 +102,85 @@ fn main() {
         }
 
         let mut target = display.draw();
-        target.clear_color(0.0, 0.0, 1.0, 1.0);
-        target.draw(&vertex_buffer, &indices, &program, &glium::uniforms::EmptyUniforms,
-                    &Default::default()).unwrap();
+        target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
+
+        let model = [
+            [0.01, 0.0, 0.0, 0.0],
+            [0.0, 0.01, 0.0, 0.0],
+            [0.0, 0.0, 0.01, 0.0],
+            [0.0, 0.0, 2.0, 1.0f32]
+        ];
+
+        let view = view_matrix(&[num[0], -1.0, num[1]], &[-2.0, 1.0, 1.0], &[0.0, 1.0, 0.0]);
+
+        let perspective = {
+            let (width, height) = target.get_dimensions();
+            let aspect_ratio = height as f32 / width as f32;
+
+            let fov: f32 = 3.141592 / 3.0;
+            let zfar = 1024.0;
+            let znear = 0.1;
+
+            let f = 1.0 / (fov / 2.0).tan();
+
+            [
+                [f *   aspect_ratio   ,    0.0,              0.0              ,   0.0],
+                [         0.0         ,     f ,              0.0              ,   0.0],
+                [         0.0         ,    0.0,  (zfar+znear)/(zfar-znear)    ,   1.0],
+                [         0.0         ,    0.0, -(2.0*zfar*znear)/(zfar-znear),   0.0],
+            ]
+        };
+
+        let light = [-1.0, 0.4, 0.9f32];
+
+        let params = glium::DrawParameters {
+            depth: glium::Depth {
+                test: glium::draw_parameters::DepthTest::IfLess,
+                write: true,
+                .. Default::default()
+            },
+            //backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+            .. Default::default()
+        };
+
+        target.draw((&positions, &normals), &indices, &program,
+                    &glium::uniform! { model: model, view: view, perspective: perspective, u_light: light },
+                    &params).unwrap();
         target.finish().unwrap();
     });
+}
+
+
+fn view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f32; 4]; 4] {
+    let f = {
+        let f = direction;
+        let len = f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
+        let len = len.sqrt();
+        [f[0] / len, f[1] / len, f[2] / len]
+    };
+
+    let s = [up[1] * f[2] - up[2] * f[1],
+             up[2] * f[0] - up[0] * f[2],
+             up[0] * f[1] - up[1] * f[0]];
+
+    let s_norm = {
+        let len = s[0] * s[0] + s[1] * s[1] + s[2] * s[2];
+        let len = len.sqrt();
+        [s[0] / len, s[1] / len, s[2] / len]
+    };
+
+    let u = [f[1] * s_norm[2] - f[2] * s_norm[1],
+             f[2] * s_norm[0] - f[0] * s_norm[2],
+             f[0] * s_norm[1] - f[1] * s_norm[0]];
+
+    let p = [-position[0] * s_norm[0] - position[1] * s_norm[1] - position[2] * s_norm[2],
+             -position[0] * u[0] - position[1] * u[1] - position[2] * u[2],
+             -position[0] * f[0] - position[1] * f[1] - position[2] * f[2]];
+
+    [
+        [s_norm[0], u[0], f[0], 0.0],
+        [s_norm[1], u[1], f[1], 0.0],
+        [s_norm[2], u[2], f[2], 0.0],
+        [p[0], p[1], p[2], 1.0],
+    ]
 }

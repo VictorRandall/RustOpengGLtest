@@ -3,7 +3,7 @@ pub struct Vertex {
     position: (f32, f32, f32)
 }
 
-implement_vertex!(Vertex, position);
+glium::implement_vertex!(Vertex, position);
 
 pub const VERTICES: [Vertex; 531] = [
     Vertex { position: (0.0, 0.0, 0.0) },   // dummy vector because in the original model indices
@@ -545,7 +545,7 @@ pub struct Normal {
     normal: (f32, f32, f32)
 }
 
-implement_vertex!(Normal, normal);
+glium::implement_vertex!(Normal, normal);
 
 pub const NORMALS: [Normal; 531] = [
     Normal { normal: (0.0, 0.0, 0.0) },     // dummy vector because in the original model indices
