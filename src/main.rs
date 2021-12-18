@@ -58,8 +58,19 @@ fn main() {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
                 },
+//				glutin::event::WindowEvent::KeyboardInput{
+//					input:
+//						KeyboardInput {
+//							state: ElementState::Pressed,
+//							virtual_keycode: Some(key),
+//							..
+//						},
+//					..
+//				} => match key {
+//					
+//				}
 				glutin::event::WindowEvent::KeyboardInput{device_id, input, is_synthetic} => {
-//                    println!("input = {:?}", input);
+                    println!("input = {:?}", input);
                     // W = 17, A = 30, D = 32, S = 31
                     
                     if input == (glutin::event::KeyboardInput { scancode: 17,
