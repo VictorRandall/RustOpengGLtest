@@ -1,5 +1,7 @@
 mod teapot;
 
+use std::collections::HashMap;
+
 fn main() {
     #[allow(unused_imports)]
     use glium::{glutin, Surface};
@@ -45,6 +47,8 @@ fn main() {
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src,
                                               None).unwrap();
 	
+	let mut input = HashMap::<glutin::event::VirtualKeyCode,glutin::event::ElementState>::new();
+	
 	let mut num: Vec<f32> = vec![0f32,0f32];
 	
     event_loop.run(move |event, _, control_flow| {
@@ -58,50 +62,52 @@ fn main() {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
                 },
-//				glutin::event::WindowEvent::KeyboardInput{
-//					input:
-//						KeyboardInput {
-//							state: ElementState::Pressed,
-//							virtual_keycode: Some(key),
-//							..
-//						},
-//					..
-//				} => match key {
-//					
-//				}
-				glutin::event::WindowEvent::KeyboardInput{device_id, input, is_synthetic} => {
-                    println!("input = {:?}", input);
-                    // W = 17, A = 30, D = 32, S = 31
-                    
-                    if input == (glutin::event::KeyboardInput { scancode: 17,
-                                                                state: glutin::event::ElementState::Pressed,
-                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
-                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
-                       	num[0] += 0.01f32;
-                        println!("{:?}", num);
-                    }
-                    if input == (glutin::event::KeyboardInput { scancode: 31,
-                                                                state: glutin::event::ElementState::Pressed,
-                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::S),
-                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
-                       	num[0] -= 0.01f32;
-                        println!("{:?}", num);
-                    }
-                    if input == (glutin::event::KeyboardInput { scancode: 30,
-                                                                state: glutin::event::ElementState::Pressed,
-                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::A),
-                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
-                        num[1] += 0.01f32;
-                        println!("{:?}", num);
-                    }
-                    if input == (glutin::event::KeyboardInput { scancode: 32,
-                                                                state: glutin::event::ElementState::Pressed,
-                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::D),
-                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
-                        num[1] -= 0.01f32;
-                        println!("{:?}", num);
-                    }
-                },
+				glutin::event::WindowEvent::KeyboardInput {
+					input: glutin::event::KeyboardInput { virtual_keycode: Some(virtual_code), state, .. },
+					..
+				} => {
+					input.insert(virtual_code, state);
+					println!("{:?}", input);
+				},
+//				match (virtual_code, state) {
+//					(VirtualKeyCode::F, ElementState::Pressed) => {
+//						println!("sus");
+//					}
+//					_ => (),
+//                },
+//				glutin::event::WindowEvent::KeyboardInput{device_id, input, is_synthetic} => {
+//                    println!("input = {:?}", input);
+//                    // W = 17, A = 30, D = 32, S = 31
+//                    
+//                    if input == (glutin::event::KeyboardInput { scancode: 17,
+//                                                                state: glutin::event::ElementState::Pressed,
+//                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::W),
+//                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+//                       	num[0] += 0.01f32;
+//                        println!("{:?}", num);
+//                    }
+//                    if input == (glutin::event::KeyboardInput { scancode: 31,
+//                                                                state: glutin::event::ElementState::Pressed,
+//                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::S),
+//                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+//                       	num[0] -= 0.01f32;
+//                        println!("{:?}", num);
+//                    }
+//                    if input == (glutin::event::KeyboardInput { scancode: 30,
+//                                                                state: glutin::event::ElementState::Pressed,
+//                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::A),
+//                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+//                        num[1] += 0.01f32;
+//                        println!("{:?}", num);
+//                    }
+//                    if input == (glutin::event::KeyboardInput { scancode: 32,
+//                                                                state: glutin::event::ElementState::Pressed,
+//                                                                virtual_keycode: Some(glutin::event::VirtualKeyCode::D),
+//                                                                modifiers: (glutin::event::ModifiersState::empty()) }) {
+//                        num[1] -= 0.01f32;
+//                        println!("{:?}", num);
+//                    }
+//                },
                 _ => return,
             },
             glutin::event::Event::NewEvents(cause) => match cause {
@@ -111,7 +117,14 @@ fn main() {
             },
             _ => return,
         }
-
+		
+//		if input.get_key_value(&glutin::event::VirtualKeyCode::W) == Some(glutin::event::ElementState::Pressed){
+//			println!("forwards");
+//		}
+//		if input.get_key_value(&glutin::event::VirtualKeyCode::D) == true{
+//			println!("left");
+//		}
+		
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
 
