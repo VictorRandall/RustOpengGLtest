@@ -1,73 +1,133 @@
-mod teapot;
+use glium::*;
+use std::time::*;
+use std::io::Cursor;
+use std::file;
 
-use std::collections::HashMap;
+//mod teapot;
+
+mod mesh;
+mod input;
+mod math;
+mod camera;
+mod voxel;
+
 
 fn main() {
-    #[allow(unused_imports)]
-    use glium::{glutin, Surface};
 
     let event_loop = glutin::event_loop::EventLoop::new();
-    let wb = glutin::window::WindowBuilder::new();
+    let wb = glutin::window::WindowBuilder::new(); //janela
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
-    let indices = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList,
-                                          &teapot::INDICES).unwrap();
+//    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
+//    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
+//    let indices = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList,
+//                                          &teapot::INDICES).unwrap();
 
+	let mesh = {
+		let mut chunk = voxel::VoxelChunk::new([1i16, 1, 1]);
+		
+		chunk.generate_mesh(&display)
+	};
+	
+	let image = image::load(Cursor::new(&include_bytes!("../textures/voxel.png")),
+                            image::ImageFormat::Png).unwrap().to_rgba8();
+	let image_dimensions = image.dimensions();
+    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
+	
     let vertex_shader_src = r#"
         #version 150
+        
         in vec3 position;
         in vec3 normal;
+        in vec2 tex_coords;
+        
         out vec3 v_normal;
+        out vec2 v_tex_coords;
+        
         uniform mat4 perspective;
         uniform mat4 view;
         uniform mat4 model;
+        
         void main() {
             mat4 modelview = view * model;
+            
             v_normal = transpose(inverse(mat3(modelview))) * normal;
+            v_tex_coords = tex_coords;
+            
             gl_Position = perspective * modelview * vec4(position, 1.0);
         }
     "#;
-
+	
+//	let vertex_shader_src = load("../shaders/voxel.glslv");
+	
     let fragment_shader_src = r#"
         #version 150
+        
         in vec3 v_normal;
+        in vec2 v_tex_coords;
+        
         out vec4 color;
+        
         uniform vec3 u_light;
+        uniform sampler2D tex;
+        
         void main() {
             float brightness = dot(normalize(v_normal), normalize(u_light));
-            vec3 dark_color = vec3(0.6, 0.0, 0.0);
-            vec3 regular_color = vec3(1.0, 0.0, 0.0);
-            color = vec4(mix(dark_color, regular_color, brightness), 1.0);
+            vec3 dark_color = vec3(0.6, 0.6, 0.6);
+            vec3 regular_color = vec3(1.0, 1.0, 1.0);
+            vec4 shadow = vec4(mix(dark_color, regular_color, brightness), 1.0);
+			color = texture(tex, v_tex_coords) * shadow;
         }
     "#;
 
     let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src,
                                               None).unwrap();
+
+	let mut input = input::InputHandler::new();
 	
-	let mut input = HashMap::<glutin::event::VirtualKeyCode,glutin::event::ElementState>::new();
+	let mut cam = camera::Camera::new();
 	
-	let mut num: Vec<f32> = vec![0f32,0f32,0f32];
-	
-    event_loop.run(move |event, _, control_flow| {
+	let mut delta = 0f32;
+	let mut last_frame: Instant = Instant::now();
+
+    event_loop.run(move |event, sus, control_flow| {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
 
+		let current_frame = Instant::now();
+		delta = (current_frame - last_frame).as_secs_f32();
+		last_frame = current_frame;
+//		println!("\x1B[2J\x1B[1;1Hdelta = {}\n{:#?}\n{:#?}", delta, input, cam);
+		
+//		println!("{:#?}", sus);
+//		println!("{:#?}", event);
+		
+		cam.update(delta, &input);
+		
+		input.update_mouse(input.mouse_pos);
+		
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
                     *control_flow = glutin::event_loop::ControlFlow::Exit;
                     return;
                 },
-				glutin::event::WindowEvent::KeyboardInput {
-					input: glutin::event::KeyboardInput { virtual_keycode: Some(virtual_code), state, .. },
+                glutin::event::WindowEvent::CursorMoved {
+					position: mouse_pos,
 					..
 				} => {
-					input.insert(virtual_code, state);
-					println!("{:?}", input);
+					let current_pos = [mouse_pos.x, mouse_pos.y];
+				
+					input.update_mouse(current_pos);
+				},
+				glutin::event::WindowEvent::KeyboardInput {
+					input: glutin::event::KeyboardInput{ scancode: key, state: is_pressed, .. },
+					..	
+				} => {
+					input.update_keyboard(key, is_pressed);
 				},
                 _ => return,
             },
@@ -78,39 +138,37 @@ fn main() {
             },
             _ => return,
         }
-		
-		if input.get_key_value(&glutin::event::VirtualKeyCode::W) == Some((&glutin::event::VirtualKeyCode::W,&glutin::event::ElementState::Pressed)){
-			num[0] += 0.01f32;
-		}
-		if input.get_key_value(&glutin::event::VirtualKeyCode::S) == Some((&glutin::event::VirtualKeyCode::S,&glutin::event::ElementState::Pressed)){
-			num[0] -= 0.01f32;
-		}
-		if input.get_key_value(&glutin::event::VirtualKeyCode::A) == Some((&glutin::event::VirtualKeyCode::A,&glutin::event::ElementState::Pressed)){
-			num[2] += 0.01f32;
-		}
-		if input.get_key_value(&glutin::event::VirtualKeyCode::D) == Some((&glutin::event::VirtualKeyCode::D,&glutin::event::ElementState::Pressed)){
-			num[2] -= 0.01f32;
-		}
-		if input.get_key_value(&glutin::event::VirtualKeyCode::Q) == Some((&glutin::event::VirtualKeyCode::Q,&glutin::event::ElementState::Pressed)){
-			num[1] += 0.01f32;
-		}
-		if input.get_key_value(&glutin::event::VirtualKeyCode::E) == Some((&glutin::event::VirtualKeyCode::E,&glutin::event::ElementState::Pressed)){
-			num[1] -= 0.01f32;
-		}
 
-		
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
 
-        let model = [
-            [0.01, 0.0, 0.0, 0.0],
-            [0.0, 0.01, 0.0, 0.0],
-            [0.0, 0.0, 0.01, 0.0],
+//        let model = [
+//            [0.01, 0.0, 0.0, 0.0],
+//            [0.0, 0.01, 0.0, 0.0],
+//            [0.0, 0.0, 0.01, 0.0],
+//            [0.0, 0.0, 2.0, 1.0f32]
+//        ];
+		
+		let model = [
+            [1.0, 0.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0, 0.0],
+            [0.0, 0.0, 1.0, 0.0],
             [0.0, 0.0, 2.0, 1.0f32]
         ];
-
-        let view = view_matrix(&[num[0], num[1] - 1f32, num[2]], &[-1.0, 1.0, 1.0], &[0.0, 1.0, 0.0]);
-
+		
+        let view = {
+        	let mut direction = [0f32, 0f32, 0f32];
+        	
+        	direction[0] = cam.yaw.cos() * cam.pitch.cos();//x
+        	direction[1] = cam.pitch.sin();				   //y
+        	direction[2] = cam.yaw.sin() * cam.pitch.cos();//z
+        	
+//        	println!("{:?}", direction);
+        	math::view_matrix(&cam.pos, &direction, &[0.0, 1.0, 0.0])
+        };
+		
+		cam.view_matrix = view;
+		
         let perspective = {
             let (width, height) = target.get_dimensions();
             let aspect_ratio = height as f32 / width as f32;
@@ -137,48 +195,15 @@ fn main() {
                 write: true,
                 .. Default::default()
             },
-//			backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+//            backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
             .. Default::default()
         };
 
-        target.draw((&positions, &normals), &indices, &program,
-                    &glium::uniform! { model: model, view: view, perspective: perspective, u_light: light },
+//        target.draw((&positions, &normals), &indices, &program,
+        target.draw(&mesh.v_buffer, &mesh.i_buffer, &program,
+                    &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, tex: &texture },
                     &params).unwrap();
         target.finish().unwrap();
     });
 }
 
-
-fn view_matrix(position: &[f32; 3], direction: &[f32; 3], up: &[f32; 3]) -> [[f32; 4]; 4] {
-    let f = {
-        let f = direction;
-        let len = f[0] * f[0] + f[1] * f[1] + f[2] * f[2];
-        let len = len.sqrt();
-        [f[0] / len, f[1] / len, f[2] / len]
-    };
-
-    let s = [up[1] * f[2] - up[2] * f[1],
-             up[2] * f[0] - up[0] * f[2],
-             up[0] * f[1] - up[1] * f[0]];
-
-    let s_norm = {
-        let len = s[0] * s[0] + s[1] * s[1] + s[2] * s[2];
-        let len = len.sqrt();
-        [s[0] / len, s[1] / len, s[2] / len]
-    };
-
-    let u = [f[1] * s_norm[2] - f[2] * s_norm[1],
-             f[2] * s_norm[0] - f[0] * s_norm[2],
-             f[0] * s_norm[1] - f[1] * s_norm[0]];
-
-    let p = [-position[0] * s_norm[0] - position[1] * s_norm[1] - position[2] * s_norm[2],
-             -position[0] * u[0] - position[1] * u[1] - position[2] * u[2],
-             -position[0] * f[0] - position[1] * f[1] - position[2] * f[2]];
-
-    [
-        [s_norm[0], u[0], f[0], 0.0],
-        [s_norm[1], u[1], f[1], 0.0],
-        [s_norm[2], u[2], f[2], 0.0],
-        [p[0], p[1], p[2], 1.0],
-    ]
-}
