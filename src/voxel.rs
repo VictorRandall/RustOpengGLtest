@@ -35,18 +35,20 @@ impl VoxelChunk{
 	}
 	
 	fn get_block(&self,pos: [i8;3]) -> VoxelType{
-//		if pos[0] < self.chunk_size as i8 && pos[0] > 0i8 && pos[1] < self.chunk_size as i8 && pos[1] > 0i8 && pos[2] < self.chunk_size as i8 && pos[2] > 0i8 {
-//			*self.blocks.get(&[pos[0] as usize, pos[1] as usize, pos[2] as usize]).unwrap()
-//		} else { VoxelType::Air }
 //		let voxel = self.blocks.get(&pos);
 //		if pos[0] < 0i8 || pos[1] < 0i8 || pos[2] < 0i8{
 //			return VoxelType::Air;
 //		}
 		println!("{:?} {:?}", self.blocks.get(&[pos[0], pos[1], pos[2]]), [pos[0], pos[1], pos[2]]);
+		if pos[0] > self.chunk_size as i8 && pos[0] < 0i8 && pos[1] > self.chunk_size as i8 && pos[1] < 0i8 && pos[2] > self.chunk_size as i8 && pos[2] < 0i8 {
+//			*self.blocks.get(&[pos[0] as usize, pos[1] as usize, pos[2] as usize]).unwrap()
+			return VoxelType::Air;
+		}
 		match self.blocks.get(&[pos[0], pos[1], pos[2]]) {
 			Some(v) => return *v,
 			None => return VoxelType::Air
 		}
+//		} else { VoxelType::Air }
 	}
 	
 	pub fn generate_mesh(&mut self, display: &glium::Display) -> Mesh{//gerar o modelo 3d dos blocos
