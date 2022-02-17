@@ -16,7 +16,7 @@ enum VoxelType{
 
 #[derive(Debug, Clone)]
 pub struct VoxelChunk{
-	blocks: HashMap<[i8;3], VoxelType>,
+	blocks: HashMap<[usize;3], VoxelType>,
 	position: [i16;3],
 	chunk_size: usize
 }
@@ -24,31 +24,31 @@ pub struct VoxelChunk{
 impl VoxelChunk{
 	pub fn new(pos: [i16;3]) -> Self{
 		Self {
-			blocks: HashMap::<[i8;3], VoxelType>::new(),
+			blocks: HashMap::<[usize;3], VoxelType>::new(), //TODO: use Array intead of HashMap
 			position: pos,
 			chunk_size: 2usize
 		}
 	}
 
-	fn generate_data(&mut self,pos: [i8;3]){//gerar os blocos
-		self.blocks.insert(pos, VoxelType::Solid);
-	}
+//	fn generate_data(&mut self,pos: [usize;3]){//gerar os blocos
+//		self.blocks.insert(pos, VoxelType::Solid);
+//	}
 	
 	fn get_block(&self,pos: [i8;3]) -> VoxelType{
 //		let voxel = self.blocks.get(&pos);
 //		if pos[0] < 0i8 || pos[1] < 0i8 || pos[2] < 0i8{
 //			return VoxelType::Air;
 //		}
-		println!("{:?} {:?}", self.blocks.get(&[pos[0], pos[1], pos[2]]), [pos[0], pos[1], pos[2]]);
-		if pos[0] > self.chunk_size as i8 && pos[0] < 0i8 && pos[1] > self.chunk_size as i8 && pos[1] < 0i8 && pos[2] > self.chunk_size as i8 && pos[2] < 0i8 {
+		println!("{:?} {:?}", self.blocks.get(&[pos[0] as usize, pos[1] as usize, pos[2] as usize]), [pos[0] as usize, pos[1] as usize, pos[2] as usize]);
+		if pos[0] <= self.chunk_size as i8 && pos[0] >= 0i8 && pos[1] <= self.chunk_size as i8 && pos[1] >= 0i8 && pos[2] <= self.chunk_size as i8 && pos[2] >= 0i8 {
 //			*self.blocks.get(&[pos[0] as usize, pos[1] as usize, pos[2] as usize]).unwrap()
-			return VoxelType::Air;
-		}
-		match self.blocks.get(&[pos[0], pos[1], pos[2]]) {
+//			return VoxelType::Air;
+//		}
+		match self.blocks.get(&[pos[0] as usize, pos[1] as usize, pos[2] as usize]) {
 			Some(v) => return *v,
 			None => return VoxelType::Air
 		}
-//		} else { VoxelType::Air }
+		} else { VoxelType::Air }
 	}
 	
 	pub fn generate_mesh(&mut self, display: &glium::Display) -> Mesh{//gerar o modelo 3d dos blocos
@@ -103,15 +103,21 @@ impl VoxelChunk{
 //			22, 21, 20,//back
 //			22, 23, 21, 
 //		];
-		
+		for x in 0..self.chunk_size{
+			for y in 0..self.chunk_size{
+				for z in 0..self.chunk_size{
+					self.blocks.insert([x,y,z], VoxelType::Solid);
+				}
+			}
+		}
 		
 		for x in 0..self.chunk_size{
 			for y in 0..self.chunk_size{
 				for z in 0..self.chunk_size{
-					self.generate_data([x as i8,y as i8,z as i8]);
+					self.blocks.insert([x,y,z], VoxelType::Solid);
 					
 //					println!("sus");
-					self.create_block([3usize,2], [x as i8,y as i8,z as i8], &mut vertexbuffer, &mut indexbuffer);
+					self.create_block([3usize,2], [x,y,z], &mut vertexbuffer, &mut indexbuffer);
 //					self.create_block([3usize,2], [0i8,0i8,0i8], &mut vertexbuffer, &mut indexbuffer);
 				}
 			}
@@ -129,7 +135,7 @@ impl VoxelChunk{
 				[0.0, 0.0, 1.0, 0.0],
 				[0.0, 0.0, 2.0, 1.0f32]]);
 	}
-	fn create_block(&self,blocks: [usize;2], pos: [i8;3], vertexbuffer: &mut Vec<Vertex>, indexbuffer: &mut Vec<u16>){
+	fn create_block(&self,blocks: [usize;2], pos: [usize;3], vertexbuffer: &mut Vec<Vertex>, indexbuffer: &mut Vec<u16>){
 		let blockvbuffer = [
 			[
 				Vertex{ position: [0.0 + pos[0] as f32, 1.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0] },//top 4
@@ -198,7 +204,7 @@ impl VoxelChunk{
 		
 //		if self.get_block([pos[0],pos[1] + 1i8,pos[2]]) == VoxelType::Air{ return; }
 		
-		if self.get_block([pos[0],pos[1] + 1i8,pos[2]]) == VoxelType::Air{ //top
+		if self.get_block([pos[0] as i8,pos[1] as i8 + 1i8,pos[2] as i8]) == VoxelType::Air{ //top
 			println!("top");
 			for u in 0..blockibuffer[0].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[0][u] + vertexbuffer.len() as u16);
@@ -207,7 +213,7 @@ impl VoxelChunk{
 				vertexbuffer.insert(vertexbuffer.len(), blockvbuffer[0][u]);
 			}
 		}
-		if self.get_block([pos[0],pos[1] - 1i8,pos[2]]) == VoxelType::Air{ //botton
+		if self.get_block([pos[0] as i8,pos[1] as i8 - 1i8,pos[2] as i8]) == VoxelType::Air{ //botton
 			println!("botton");
 			for u in 0..blockibuffer[1].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[1][u] + vertexbuffer.len() as u16);
@@ -216,7 +222,7 @@ impl VoxelChunk{
 				vertexbuffer.insert(vertexbuffer.len(), blockvbuffer[1][u]);
 			}
 		}
-		if self.get_block([pos[0] - 1i8,pos[1],pos[2]]) == VoxelType::Air{ //left
+		if self.get_block([pos[0] as i8 - 1i8,pos[1] as i8,pos[2] as i8]) == VoxelType::Air{ //left
 			println!("left");
 			for u in 0..blockibuffer[2].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[2][u] + vertexbuffer.len() as u16);
@@ -225,7 +231,7 @@ impl VoxelChunk{
 				vertexbuffer.insert(vertexbuffer.len(), blockvbuffer[2][u]);
 			}
 		}
-		if self.get_block([pos[0] + 1i8,pos[1],pos[2]]) == VoxelType::Air{ //right
+		if self.get_block([pos[0] as i8 + 1i8,pos[1] as i8,pos[2] as i8]) == VoxelType::Air{ //right
 			println!("right");
 			for u in 0..blockibuffer[3].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[3][u] + vertexbuffer.len() as u16);
@@ -234,7 +240,7 @@ impl VoxelChunk{
 				vertexbuffer.insert(vertexbuffer.len(), blockvbuffer[3][u]);
 			}
 		}
-		if self.get_block([pos[0],pos[1],pos[2] + 1i8]) == VoxelType::Air{ //front
+		if self.get_block([pos[0] as i8,pos[1] as i8,pos[2] as i8 + 1i8]) == VoxelType::Air{ //front
 			println!("front");
 			for u in 0..blockibuffer[4].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[4][u] + vertexbuffer.len() as u16);
@@ -243,7 +249,7 @@ impl VoxelChunk{
 				vertexbuffer.insert(vertexbuffer.len(), blockvbuffer[4][u]);
 			}
 		}
-		if self.get_block([pos[0],pos[1],pos[2] - 1i8]) == VoxelType::Air{ //back
+		if self.get_block([pos[0] as i8,pos[1] as i8,pos[2] as i8 - 1i8]) == VoxelType::Air{ //back
 			println!("back");
 			for u in 0..blockibuffer[5].len(){
 				indexbuffer.insert(indexbuffer.len(), blockibuffer[5][u] + vertexbuffer.len() as u16);
