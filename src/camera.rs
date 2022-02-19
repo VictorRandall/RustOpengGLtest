@@ -18,26 +18,29 @@ impl Camera {
 		}
 	}
 	pub fn update(&mut self, delta: f32, input: &InputHandler){
-		self.yaw += input.mouse_motion[0] as f32 / 1000f32 * 3f32;
-		self.pitch += input.mouse_motion[1] as f32 / 1000f32 * 3f32;
+		let mouse_sensitivity = 80f32;
+		let cam_speed = 4f32;
 		
-		if 0f32 > self.yaw{
+		self.yaw += input.mouse_motion[0] as f32 * delta * mouse_sensitivity;
+		self.pitch += input.mouse_motion[1] as f32 * delta * mouse_sensitivity;
+		
+		if 0f32 < self.yaw{
 			self.yaw = 0f32;
 		}
-		if -1f32 > self.pitch{
-			self.pitch = -1f32;
+		if -90f32 > self.pitch{
+			self.pitch = -90f32;
 		}
 		
 		if input.is_key_pressed(17u32) == true{
-//			println!("walking foward");
-			self.pos[0] += self.yaw.cos() * self.pitch.cos() * delta * 4f32;
-			self.pos[1] += self.pitch.sin() * delta * 4f32;
-			self.pos[2] += self.yaw.sin() * self.pitch.cos() * delta * 4f32;
+//			println!("walking fowards");
+			self.pos[0] += self.yaw.to_radians().cos() * self.pitch.to_radians().cos() * delta * cam_speed;
+			self.pos[1] += self.pitch.to_radians().sin() * delta * cam_speed;
+			self.pos[2] += self.yaw.to_radians().sin() * self.pitch.to_radians().cos() * delta * cam_speed;
 		}else if input.is_key_pressed(31u32) == true{
-//			println!("walking backward");
-			self.pos[0] -= self.yaw.cos() * self.pitch.cos() * delta * 4f32;
-			self.pos[1] -= self.pitch.sin() * delta * 4f32;
-			self.pos[2] -= self.yaw.sin() * self.pitch.cos() * delta * 4f32;
+//			println!("walking backwards");
+			self.pos[0] -= self.yaw.to_radians().cos() * self.pitch.to_radians().cos() * delta * cam_speed;
+			self.pos[1] -= self.pitch.to_radians().sin() * delta * cam_speed;
+			self.pos[2] -= self.yaw.to_radians().sin() * self.pitch.to_radians().cos() * delta * cam_speed;
 		}
 //		println!("{} {}", self.yaw, self.pitch);
 //		if self.yaw > 89

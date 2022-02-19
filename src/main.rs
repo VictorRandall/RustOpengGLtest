@@ -3,7 +3,6 @@ use std::time::*;
 use std::io::Cursor;
 use std::file;
 
-//mod teapot;
 
 mod mesh;
 mod input;
@@ -19,13 +18,9 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-//    let positions = glium::VertexBuffer::new(&display, &teapot::VERTICES).unwrap();
-//    let normals = glium::VertexBuffer::new(&display, &teapot::NORMALS).unwrap();
-//    let indices = glium::IndexBuffer::new(&display, glium::index::PrimitiveType::TrianglesList,
-//                                          &teapot::INDICES).unwrap();
 
 	let mesh = {
-		let mut chunk = voxel::VoxelChunk::new([1i16, 1, 1]);
+		let mut chunk = voxel::VoxelChunk::new(4usize,[1i16, 1, 1]);
 		
 		chunk.generate_mesh(&display)
 	};
@@ -159,9 +154,9 @@ fn main() {
         let view = {
         	let mut direction = [0f32, 0f32, 0f32];
         	
-        	direction[0] = cam.yaw.cos() * cam.pitch.cos();//x
-        	direction[1] = cam.pitch.sin();				   //y
-        	direction[2] = cam.yaw.sin() * cam.pitch.cos();//z
+        	direction[0] = cam.yaw.to_radians().cos() * cam.pitch.to_radians().cos();//x
+        	direction[1] = cam.pitch.to_radians().sin();				   //y
+        	direction[2] = cam.yaw.to_radians().sin() * cam.pitch.to_radians().cos();//z
         	
 //        	println!("{:?}", direction);
         	math::view_matrix(&cam.pos, &direction, &[0.0, 1.0, 0.0])
