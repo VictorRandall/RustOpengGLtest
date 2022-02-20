@@ -20,7 +20,7 @@ fn main() {
 
 
 	let mesh = {
-		let mut chunk = voxel::VoxelChunk::new(4usize,[1i16, 1, 1]);
+		let mut chunk = voxel::VoxelChunk::new(2usize,[1i16, 1, 1]);
 		
 		chunk.generate_mesh(&display)
 	};
