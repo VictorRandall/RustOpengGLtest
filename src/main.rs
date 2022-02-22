@@ -170,7 +170,7 @@ fn main() {
 
             let fov: f32 = 3.141592 / 3.0;
             let zfar = 1024.0;
-            let znear = 0.1;
+            let znear = 0.001;
 
             let f = 1.0 / (fov / 2.0).tan();
 
@@ -194,7 +194,6 @@ fn main() {
             .. Default::default()
         };
 
-//        target.draw((&positions, &normals), &indices, &program,
         target.draw(&mesh.v_buffer, &mesh.i_buffer, &program,
                     &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, tex: &texture },
                     &params).unwrap();
