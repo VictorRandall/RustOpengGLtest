@@ -9,14 +9,14 @@ enum VoxelType{
 
 #[derive(Debug, Clone)]
 pub struct VoxelChunk {
-    data: HashMap<[usize; 3], VoxelType>,
+    data: HashMap<[i8; 3], VoxelType>,
     size: usize,
     pos: [i16;3]
 }
 impl VoxelChunk{
 	pub fn new(size: usize, pos: [i16;3]) -> Self{
 		Self{
-			data: HashMap::<[usize; 3], VoxelType>::new(),
+			data: HashMap::<[i8; 3], VoxelType>::new(),
 			size: size,
 			pos: pos
 		}
@@ -27,22 +27,20 @@ impl VoxelChunk{
 		
 		let mut indexbuffer: Vec<u16> = vec![];
 		
-		for x in 0..2usize{
-			for y in 0..2usize{
-				for z in 0..2usize{
-		            self.data.insert([x,y,z], VoxelType::Solid);
+		for x in 0..self.size{
+			for y in 0..self.size{
+				for z in 0..self.size{
+		            self.data.insert([x as i8,y as i8,z as i8], VoxelType::Solid);
 		            // test.block[x][y][z] = VoxelType::Solid
 		        }
 		    }
 		}
 		println!("{:?}", self.data);
-		for x in 0..2usize{
-			for y in 0..2usize{
-				for z in 0..2usize{
+		for (key, value) in &self.data{
 //					if self.get_voxel([x as i8,y as i8,z as i8]) == VoxelType::Air {
 //						println!("stop");
 //					}
-					self.generate_voxel_mesh([x as i8,y as i8,z as i8], &mut vertexbuffer, &mut indexbuffer)
+			self.generate_voxel_mesh(*key, &mut vertexbuffer, &mut indexbuffer)
 					
 //					if self.get_voxel([x as i8,y as i8 + 1i8,z as i8]) == VoxelType::Air{
 //						println!("top");
@@ -92,8 +90,6 @@ impl VoxelChunk{
 //		                self.get_voxel([x as i8 + 1i8,y as i8,z as i8]),
 //		                [x as i8 + 1i8,y as i8,z as i8],
 //		             );
-		        }
-		    }
 		}
 //		println!("{:?}", indexbuffer);
 		return Mesh::new(
@@ -113,10 +109,10 @@ impl VoxelChunk{
 //		if pos[0] <= self.size as i8 && pos[0] >= 0i8 &&
 //		pos[1] <= self.size as i8 && pos[1] >= 0i8 &&
 //		pos[2] <= self.size as i8 && pos[2] >= 0i8 {
-		   match self.data.get(&[pos[0] as usize,pos[1] as usize,pos[2] as usize]) {
-		      Some(v) => return *v,
-		      None => return VoxelType::Air
-		   }
+		match self.data.get(&pos) {
+			Some(v) => return *v,
+			None => return VoxelType::Air
+		}
 //		} else {
 //			return VoxelType::Air;
 //		}
@@ -127,15 +123,15 @@ impl VoxelChunk{
 		let blockvbuffer = [// TODO: remove all `+ pos[] as f32`
 			[
 				Vertex{ position: [0.0 + pos[0] as f32, 1.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 0.0] },//top 4
-				Vertex{ position: [1.0 + pos[0] as f32, 1.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 0.0] },//  
-				Vertex{ position: [0.0 + pos[0] as f32, 1.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0] },// 
-				Vertex{ position: [1.0 + pos[0] as f32, 1.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 1.0] },//
+				Vertex{ position: [1.0 + pos[0] as f32, 1.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 0.0] }, 
+				Vertex{ position: [0.0 + pos[0] as f32, 1.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [0.0, 1.0] },
+				Vertex{ position: [1.0 + pos[0] as f32, 1.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, 1.0, 0.0], tex_coords: [1.0, 1.0] },
 			],
 			[
 				Vertex{ position: [0.0 + pos[0] as f32, 0.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [0.0, 0.0] },//botton 0
-				Vertex{ position: [1.0 + pos[0] as f32, 0.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 0.0] },//		
-				Vertex{ position: [0.0 + pos[0] as f32, 0.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [0.0, 1.0] },//
-				Vertex{ position: [1.0 + pos[0] as f32, 0.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 1.0] },//
+				Vertex{ position: [1.0 + pos[0] as f32, 0.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 0.0] },		
+				Vertex{ position: [0.0 + pos[0] as f32, 0.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [0.0, 1.0] },
+				Vertex{ position: [1.0 + pos[0] as f32, 0.0 + pos[1] as f32, 1.0 + pos[2] as f32], normal: [0.0, -1.0, 0.0], tex_coords: [1.0, 1.0] },
 			],
 			[
 				Vertex{ position: [0.0 + pos[0] as f32, 0.0 + pos[1] as f32, 0.0 + pos[2] as f32], normal: [-1.0, 0.0, 0.0], tex_coords: [0.0, 0.0] },//left 8
