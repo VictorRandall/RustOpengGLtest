@@ -194,15 +194,9 @@ fn main() {
             .. Default::default()
         };
         
-        let behavior = glium::uniforms::SamplerBehavior {
-			minify_filter: glium::uniforms::MinifySamplerFilter::Nearest,
-			magnify_filter: glium::uniforms::MagnifySamplerFilter::Nearest,
-			.. Default::default()
-		};
-
         target.draw(&mesh.v_buffer, &mesh.i_buffer, &program,
                     &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, 
-                    tex: glium::uniforms::Sampler(&texture, behavior) },
+                    tex: glium::uniforms::Sampler(&mesh.texture, mesh.behavior) },
 //                    tex: &texture },
                     &params).unwrap();
         target.finish().unwrap();

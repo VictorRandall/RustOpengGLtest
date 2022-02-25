@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Cursor;
 use crate::mesh::*;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -22,7 +23,7 @@ impl VoxelChunk{
 		}
 	}
 	
-	pub fn generate_mesh(&mut self, display: &glium::Display) -> Mesh{
+	pub fn generate_mesh(&mut self, display: &glium::Display) -> Mesh3d{
 		let mut vertexbuffer: Vec<Vertex> = vec![];
 		
 		let mut indexbuffer: Vec<u16> = vec![];
@@ -92,7 +93,13 @@ impl VoxelChunk{
 //		             );
 		}
 //		println!("{:?}", indexbuffer);
-		return Mesh::new(
+		let image = image::load(Cursor::new(&include_bytes!("../textures/voxel.png")),
+		                        image::ImageFormat::Png).unwrap().to_rgba8();
+		let image_dimensions = image.dimensions();
+		let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
+		let texture = glium::texture::SrgbTexture2d::new(display, image).unwrap();
+		
+		return Mesh3d::new(
 			glium::VertexBuffer::new(display, &vertexbuffer.as_slice()).unwrap(),
 			glium::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &indexbuffer.as_slice()).unwrap(),
 			[
@@ -100,7 +107,13 @@ impl VoxelChunk{
 				[0.0, 1.0, 0.0, 0.0],
 				[0.0, 0.0, 1.0, 0.0],
 				[0.0, 0.0, 2.0, 1.0f32]
-			]
+			],
+			texture,
+			glium::uniforms::SamplerBehavior {
+				minify_filter: glium::uniforms::MinifySamplerFilter::Nearest,
+				magnify_filter: glium::uniforms::MagnifySamplerFilter::Nearest,
+				.. Default::default()
+			}
 		);
 	}
 
