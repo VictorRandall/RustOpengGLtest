@@ -26,6 +26,7 @@ impl Camera {
 			self.pitch.to_radians().sin(), 
 			self.yaw.to_radians().sin() * self.pitch.to_radians().cos()
 		];
+		
 		let up = [0f32,1f32,0f32];
 		
 		let left = [
