@@ -95,7 +95,7 @@ fn main() {
 		let current_frame = Instant::now();
 		delta = (current_frame - last_frame).as_secs_f32();
 		last_frame = current_frame;
-//		println!("\x1B[2J\x1B[1;1Hdelta = {}\n{:#?}\n{:#?}", delta, input, cam);
+		println!("\x1B[2J\x1B[1;1Hdelta = {}\n{:#?}\n{:#?}", delta, input, cam);
 		
 //		println!("{:#?}", sus);
 //		println!("{:#?}", event);
@@ -193,9 +193,17 @@ fn main() {
 //			backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
             .. Default::default()
         };
+        
+        let behavior = glium::uniforms::SamplerBehavior {
+			minify_filter: glium::uniforms::MinifySamplerFilter::Nearest,
+			magnify_filter: glium::uniforms::MagnifySamplerFilter::Nearest,
+			.. Default::default()
+		};
 
         target.draw(&mesh.v_buffer, &mesh.i_buffer, &program,
-                    &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, tex: &texture },
+                    &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, 
+                    tex: glium::uniforms::Sampler(&texture, behavior) },
+//                    tex: &texture },
                     &params).unwrap();
         target.finish().unwrap();
     });

@@ -21,6 +21,19 @@ impl Camera {
 		let mouse_sensitivity = 80f32;
 		let cam_speed = 4f32;
 		
+		let front = [
+			self.yaw.to_radians().cos() * self.pitch.to_radians().cos(),
+			self.pitch.to_radians().sin(), 
+			self.yaw.to_radians().sin() * self.pitch.to_radians().cos()
+		];
+		let up = [0f32,1f32,0f32];
+		
+		let left = [
+			(front[1] * up[2]) - (front[2] * up[1]),
+			(front[2] * up[0]) - (front[0] * up[2]),
+			(front[0] * up[1]) - (front[1] * up[0])
+		];
+		
 		self.yaw += input.mouse_motion[0] as f32 * delta * mouse_sensitivity;
 		self.pitch += input.mouse_motion[1] as f32 * delta * mouse_sensitivity;
 		
@@ -33,30 +46,28 @@ impl Camera {
 		
 		if input.is_key_pressed(17u32) == true{
 //			println!("walking fowards");
-			self.pos[0] += self.yaw.to_radians().cos() * self.pitch.to_radians().cos() * delta * cam_speed;
-			self.pos[1] += self.pitch.to_radians().sin() * delta * cam_speed;
-			self.pos[2] += self.yaw.to_radians().sin() * self.pitch.to_radians().cos() * delta * cam_speed;
+			self.pos[0] += front[0] * delta * cam_speed;
+			self.pos[1] += front[1] * delta * cam_speed;
+			self.pos[2] += front[2] * delta * cam_speed;
 		}else if input.is_key_pressed(31u32) == true{
 //			println!("walking backwards");
-			self.pos[0] -= self.yaw.to_radians().cos() * self.pitch.to_radians().cos() * delta * cam_speed;
-			self.pos[1] -= self.pitch.to_radians().sin() * delta * cam_speed;
-			self.pos[2] -= self.yaw.to_radians().sin() * self.pitch.to_radians().cos() * delta * cam_speed;
+			self.pos[0] -= front[0] * delta * cam_speed;
+			self.pos[1] -= front[1] * delta * cam_speed;
+			self.pos[2] -= front[2] * delta * cam_speed;
+		}
+		
+		if input.is_key_pressed(30u32) == true{
+//			println!("walking left");
+			self.pos[0] += left[0] * delta * cam_speed;
+			self.pos[1] += left[1] * delta * cam_speed;
+			self.pos[2] += left[2] * delta * cam_speed;
+		}else if input.is_key_pressed(32u32) == true{
+//			println!("walking right");
+			self.pos[0] -= left[0] * delta * cam_speed;
+			self.pos[1] -= left[1] * delta * cam_speed;
+			self.pos[2] -= left[2] * delta * cam_speed;
 		}
 //		println!("{} {}", self.yaw, self.pitch);
 //		if self.yaw > 89
 	}
 }
-//TODO: testar isso dps
-//void processInput(GLFWwindow *window)
-//{
-//    ...
-//    const float cameraSpeed = 0.05f; // adjust accordingly
-//    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-//        cameraPos += cameraSpeed * cameraFront;
-//    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-//        cameraPos -= cameraSpeed * cameraFront;
-//    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-//        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-//    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-//        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-//}
