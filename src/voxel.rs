@@ -23,7 +23,7 @@ impl VoxelChunk{
 		}
 	}
 	
-	pub fn generate_mesh(&mut self, display: &glium::Display) -> Mesh3d{
+	pub fn generate_mesh<'a>(&mut self, display: &glium::Display) -> Mesh3d<'a>{
 		let mut vertexbuffer: Vec<Vertex> = vec![];
 		
 		let mut indexbuffer: Vec<u16> = vec![];
@@ -99,6 +99,52 @@ impl VoxelChunk{
 		let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
 		let texture = glium::texture::SrgbTexture2d::new(display, image).unwrap();
 		
+		let vertex_shader_src = r#"
+		    #version 150
+		    
+		    in vec3 position;
+		    in vec3 normal;
+		    in vec2 tex_coords;
+		    
+		    out vec3 v_normal;
+		    out vec2 v_tex_coords;
+		    
+		    uniform mat4 perspective;
+		    uniform mat4 view;
+		    uniform mat4 model;
+		    
+		    void main() {
+		        mat4 modelview = view * model;
+		        
+		        v_normal = transpose(inverse(mat3(modelview))) * normal;
+		        v_tex_coords = tex_coords;
+		        
+		        gl_Position = perspective * modelview * vec4(position, 1.0);
+		    }
+		"#;
+		let fragment_shader_src = r#"
+		    #version 150
+		    
+		    in vec3 v_normal;
+		    in vec2 v_tex_coords;
+		    
+		    out vec4 color;
+		    
+		    uniform vec3 u_light;
+		    uniform sampler2D tex;
+		    
+		    void main() {
+		        float brightness = dot(normalize(v_normal), normalize(u_light));
+		        vec3 dark_color = vec3(0.6, 0.6, 0.6);
+		        vec3 regular_color = vec3(1.0, 1.0, 1.0);
+		        vec4 shadow = vec4(mix(dark_color, regular_color, brightness), 1.0);
+				color = texture(tex, v_tex_coords) * shadow;
+		    }
+		"#;
+
+		let program = glium::Program::from_source(display, vertex_shader_src, fragment_shader_src,
+		                                          None).unwrap();
+			
 		return Mesh3d::new(
 			glium::VertexBuffer::new(display, &vertexbuffer.as_slice()).unwrap(),
 			glium::IndexBuffer::new(display, glium::index::PrimitiveType::TrianglesList, &indexbuffer.as_slice()).unwrap(),
@@ -108,11 +154,23 @@ impl VoxelChunk{
 				[0.0, 0.0, 1.0, 0.0],
 				[0.0, 0.0, 2.0, 1.0f32]
 			],
-			texture,
-			glium::uniforms::SamplerBehavior {
-				minify_filter: glium::uniforms::MinifySamplerFilter::Nearest,
-				magnify_filter: glium::uniforms::MagnifySamplerFilter::Nearest,
-				.. Default::default()
+			Material{
+				texture: texture,
+				behavior: glium::uniforms::SamplerBehavior {
+					minify_filter: glium::uniforms::MinifySamplerFilter::Nearest,
+					magnify_filter: glium::uniforms::MagnifySamplerFilter::Nearest,
+					.. Default::default()
+				},
+				shaders: program,
+				draw_parameters: glium::DrawParameters {
+				    depth: glium::Depth {
+				        test: glium::draw_parameters::DepthTest::IfLess,
+				        write: true,
+				        .. Default::default()
+				    },
+		//			backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
+				    .. Default::default()
+				}
 			}
 		);
 	}

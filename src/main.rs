@@ -18,67 +18,8 @@ fn main() {
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
 
-
-	let mesh = {
-		let mut chunk = voxel::VoxelChunk::new(2usize,[1i16, 1, 1]);
-		
-		chunk.generate_mesh(&display)
-	};
-	
-	let image = image::load(Cursor::new(&include_bytes!("../textures/voxel.png")),
-                            image::ImageFormat::Png).unwrap().to_rgba8();
-	let image_dimensions = image.dimensions();
-    let image = glium::texture::RawImage2d::from_raw_rgba_reversed(&image.into_raw(), image_dimensions);
-    let texture = glium::texture::SrgbTexture2d::new(&display, image).unwrap();
-	
-    let vertex_shader_src = r#"
-        #version 150
-        
-        in vec3 position;
-        in vec3 normal;
-        in vec2 tex_coords;
-        
-        out vec3 v_normal;
-        out vec2 v_tex_coords;
-        
-        uniform mat4 perspective;
-        uniform mat4 view;
-        uniform mat4 model;
-        
-        void main() {
-            mat4 modelview = view * model;
-            
-            v_normal = transpose(inverse(mat3(modelview))) * normal;
-            v_tex_coords = tex_coords;
-            
-            gl_Position = perspective * modelview * vec4(position, 1.0);
-        }
-    "#;
-	
-//	let vertex_shader_src = load("../shaders/voxel.glslv");
-	
-    let fragment_shader_src = r#"
-        #version 150
-        
-        in vec3 v_normal;
-        in vec2 v_tex_coords;
-        
-        out vec4 color;
-        
-        uniform vec3 u_light;
-        uniform sampler2D tex;
-        
-        void main() {
-            float brightness = dot(normalize(v_normal), normalize(u_light));
-            vec3 dark_color = vec3(0.6, 0.6, 0.6);
-            vec3 regular_color = vec3(1.0, 1.0, 1.0);
-            vec4 shadow = vec4(mix(dark_color, regular_color, brightness), 1.0);
-			color = texture(tex, v_tex_coords) * shadow;
-        }
-    "#;
-
-    let program = glium::Program::from_source(&display, vertex_shader_src, fragment_shader_src,
-                                              None).unwrap();
+	let mut chunk = voxel::VoxelChunk::new(2usize,[1i16, 1, 1]);
+	let mesh = chunk.generate_mesh(&display);
 
 	let mut input = input::InputHandler::new();
 	
@@ -137,20 +78,6 @@ fn main() {
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
 
-//        let model = [
-//            [0.01, 0.0, 0.0, 0.0],
-//            [0.0, 0.01, 0.0, 0.0],
-//            [0.0, 0.0, 0.01, 0.0],
-//            [0.0, 0.0, 2.0, 1.0f32]
-//        ];
-		
-		let model = [
-            [1.0, 0.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0, 0.0],
-            [0.0, 0.0, 1.0, 0.0],
-            [0.0, 0.0, 2.0, 1.0f32]
-        ];
-		
         let view = {
         	let mut direction = [0f32, 0f32, 0f32];
         	
@@ -194,11 +121,11 @@ fn main() {
             .. Default::default()
         };
         
-        target.draw(&mesh.v_buffer, &mesh.i_buffer, &program,
+        target.draw(&mesh.v_buffer, &mesh.i_buffer, &mesh.material.shaders,
                     &uniform! { model: mesh.model, view: view, perspective: perspective, u_light: light, 
-                    tex: glium::uniforms::Sampler(&mesh.texture, mesh.behavior) },
+                    tex: glium::uniforms::Sampler(&mesh.material.texture, mesh.material.behavior) },
 //                    tex: &texture },
-                    &params).unwrap();
+                    &mesh.material.draw_parameters).unwrap();
         target.finish().unwrap();
     });
 }

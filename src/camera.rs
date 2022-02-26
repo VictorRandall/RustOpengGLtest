@@ -22,9 +22,9 @@ impl Camera {
 		let cam_speed = 4f32;
 		
 		let front = [
-			self.yaw.to_radians().cos() * self.pitch.to_radians().cos(),
+			self.yaw.to_radians().cos(),// * self.pitch.to_radians().cos(),
 			self.pitch.to_radians().sin(), 
-			self.yaw.to_radians().sin() * self.pitch.to_radians().cos()
+			self.yaw.to_radians().sin(),// * self.pitch.to_radians().cos()
 		];
 		
 		let up = [0f32,1f32,0f32];
@@ -48,24 +48,24 @@ impl Camera {
 		if input.is_key_pressed(17u32) == true{
 //			println!("walking fowards");
 			self.pos[0] += front[0] * delta * cam_speed;
-			self.pos[1] += front[1] * delta * cam_speed;
+//			self.pos[1] += front[1] * delta * cam_speed;
 			self.pos[2] += front[2] * delta * cam_speed;
 		}else if input.is_key_pressed(31u32) == true{
 //			println!("walking backwards");
 			self.pos[0] -= front[0] * delta * cam_speed;
-			self.pos[1] -= front[1] * delta * cam_speed;
+//			self.pos[1] -= front[1] * delta * cam_speed;
 			self.pos[2] -= front[2] * delta * cam_speed;
 		}
 		
 		if input.is_key_pressed(30u32) == true{
 //			println!("walking left");
 			self.pos[0] += left[0] * delta * cam_speed;
-			self.pos[1] += left[1] * delta * cam_speed;
+//			self.pos[1] += left[1] * delta * cam_speed;
 			self.pos[2] += left[2] * delta * cam_speed;
 		}else if input.is_key_pressed(32u32) == true{
 //			println!("walking right");
 			self.pos[0] -= left[0] * delta * cam_speed;
-			self.pos[1] -= left[1] * delta * cam_speed;
+//			self.pos[1] -= left[1] * delta * cam_speed;
 			self.pos[2] -= left[2] * delta * cam_speed;
 		}
 //		println!("{} {}", self.yaw, self.pitch);
