@@ -23,7 +23,7 @@ impl InputHandler{
 		match state {
 			glutin::event::ElementState::Pressed => key_state = true,
 			glutin::event::ElementState::Released => key_state = false
-		} 
+		}
 		
 		self.keys.insert(key, key_state);
 	}

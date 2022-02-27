@@ -3,7 +3,6 @@ use std::time::*;
 use std::io::Cursor;
 use std::file;
 
-
 mod mesh;
 mod input;
 mod math;
@@ -12,12 +11,11 @@ mod voxel;
 
 
 fn main() {
-
     let event_loop = glutin::event_loop::EventLoop::new();
     let wb = glutin::window::WindowBuilder::new(); //janela
     let cb = glutin::ContextBuilder::new().with_depth_buffer(24);
     let display = glium::Display::new(wb, cb, &event_loop).unwrap();
-
+	
 	let mut chunk = voxel::VoxelChunk::new(2usize,[1i16, 1, 1]);
 	let mesh = chunk.generate_mesh(&display);
 
@@ -28,23 +26,25 @@ fn main() {
 	let mut delta = 0f32;
 	let mut last_frame: Instant = Instant::now();
 
+	let mouse: bool = true;
+
     event_loop.run(move |event, sus, control_flow| {
         let next_frame_time = std::time::Instant::now() +
             std::time::Duration::from_nanos(16_666_667);
         *control_flow = glutin::event_loop::ControlFlow::WaitUntil(next_frame_time);
-
+        
+		
+		input.is_key_pressed(1u32);
+		
 		let current_frame = Instant::now();
 		delta = (current_frame - last_frame).as_secs_f32();
 		last_frame = current_frame;
-		println!("\x1B[2J\x1B[1;1Hdelta = {}\n{:#?}\n{:#?}", delta, input, cam);
-		
-//		println!("{:#?}", sus);
-//		println!("{:#?}", event);
 		
 		cam.update(delta, &input);
 		
 		input.update_mouse(input.mouse_pos);
 		
+		println!("\x1B[2J\x1B[1;1Hdelta = {}\n{:#?}\n{:#?}", delta, input, cam);
         match event {
             glutin::event::Event::WindowEvent { event, .. } => match event {
                 glutin::event::WindowEvent::CloseRequested => {
@@ -74,6 +74,14 @@ fn main() {
             },
             _ => return,
         }
+//        if mouse{
+//		    display.gl_window().window().set_cursor_grab(true);
+//		    display.gl_window().window().set_cursor_visible(false);
+//		    display.gl_window().window().set_cursor_position(glutin::dpi::Position::Physical(glutin::dpi::PhysicalPosition{ x: 0i32, y: 0i32}));
+//		} else{
+//		    display.gl_window().window().set_cursor_grab(false);
+//		    display.gl_window().window().set_cursor_visible(true);
+//		}
 
         let mut target = display.draw();
         target.clear_color_and_depth((0.0, 0.0, 1.0, 1.0), 1.0);
@@ -129,4 +137,3 @@ fn main() {
         target.finish().unwrap();
     });
 }
-
